@@ -1,0 +1,82 @@
+## lib package----
+library(lavaan)
+library(data.table)
+library(semPlot)
+## set path----
+path_pain <- "~/data/paintypes/pain_type/"
+path_outcome <- "~/data/outcomes/"
+path_Infla_metab <-"~/data/SEM/"
+path_PRS <- "~/data/output/results_F1/PRScs/"
+path_cov <- "~/data/covariates/"
+path_output <- "~/data/output/"
+## data input-----
+library(data.table)
+pain0 <- read.csv(paste0(path_pain,"pain_filtered_Final.csv"))
+cov0 <- as.data.frame(fread(paste0(path_cov,file = "cov_SEM.tsv"), header = T))
+diseases0 <- as.data.frame(fread(paste0(path_outcome,"diseases.csv")))
+Infla0 <- read.csv(paste0(path_Infla_metab,"Infla_ratio_int0.csv"))
+Infla0[,c(7:10)] <- apply(Infla0[,c(7:10)], 2, as.numeric)
+metabolism0 <- as.data.frame(fread(paste0(path_Infla_metab,file = "Metabolomics_baseline_raw.tsv"), header = T))
+LP_PRS0 <- as.data.frame(fread(paste0(path_PRS,file = "LP_total_scores_sum.txt"), header = T))
+names(LP_PRS0)[1] <- "eid"
+
+## data fltered infla-----
+infla <- Infla0[,c("eid","C.reactive.protein",
+                   "SII",
+                   "Neutrophil.count",
+                   "Platelet.count")]
+
+LP <- pain0[,c("eid","WLPvsHC")]
+
+LP_PRS <- LP_PRS0
+
+cov <- cov0[,c("eid","Age","Sex","College","TDI")]
+
+diseases <- diseases0[,c("eid","Dementia_status","Stroke_status","Anxiety_status","MDD_status",
+                         "Bipolar_status","PD_status","Sleep_status")]
+
+metab <- metabolism0[,c("eid",
+                        "X"
+                        )]
+
+Data_merge <- Reduce(function(x,y) merge(x,y,by="eid"),list(LP_PRS,LP,infla,diseases,metab,cov),accumulate = F)
+Data_merge <- na.omit(Data_merge)
+dat1 <- Data_merge[,-1]
+
+all.scaled1 <- data.frame(scale(dat1,center = F))
+
+## model-----
+infla.model1<-"
+            LP =~ 1*WLPvsHC
+            Prs =~ 1*score_sum
+            diseases =~ 1*Dementia_status + Stroke_status + Anxiety_status + MDD_status + Sleep_status 
+            infla =~ 1*
+            C.reactive.protein +
+            Platelet.count +
+            Neutrophil.count
+            
+            metabolites =~ 1*
+                        ~ +
+                        ~ +
+                        ~ 
+      #
+      LP ~  Prs + Age + Sex 
+      metabolites ~  Prs + LP + Age + Sex
+      infla ~  Prs + LP +  metabolites  + Age + Sex
+      diseases ~ Prs + LP  + metabolites + infla + Age + Sex
+
+      #
+      metabolites ~~ metabolites
+      infla ~~ infla
+         "
+fit1<-sem(infla.model1,data=all.scaled1)
+fit1_summary<-summary(fit1,standardized=T)
+fit1_summary
+SRT_GM_WM <- as.data.frame(fit1_summary$pe)
+write.csv(SRT_GM_WM, file = paste0(path_output,"LP_SEM_results.csv"), row.names = FALSE)
+
+fitMeasures(fit1,c("pvalue","cfi","nfi","ifi","rmsea","srmr"))
+Sum_SRT_GM_WM <- as.data.frame(fitmeasures(fit1,fit.measures='all',baseline.model = NULL))
+write.csv(Sum_SRT_GM_WM, file = paste0(path_output,"LP_SEM_index.csv"), row.names = T)
+
+modindices(fit1, sort = TRUE)
