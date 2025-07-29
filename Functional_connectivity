@@ -1,0 +1,86 @@
+addpath(genpath(‘~/hsl/pain_FC/')) % add path for the use of functions
+%%
+clear,clc
+cd (‘~/hsl/pain_FC/') 
+%% 
+Hear_int2=readtable(“~/hsl/pain_FC/AP_filtered_Final.csv");%input phenotype data(revise)
+pheno_id=table2array(Hear_int2(:,1)); % define subject2(:,3)ts id(revise)
+Hear_data=table2array(Hear_int2(:,2)); % define phenotype data(revise)
+
+%% 
+load(“~/FC_all/fcMatrices_pearson_aparc_S1_GSR_z.mat")
+fc_id = readtable(‘~/FC_all/fcMatrices_aparc_S1_GSR_subjs.csv');
+fc_id = table2array(fc_id);
+fc_id = double(fc_id);
+
+%%
+fc_edges = readtable(‘~/fcMatrices_aparc_S1_edges_GHH_rank_dk84.csv');
+%%
+fcmeanall2=nan(size(fcMatrices_pearson_z,1),2);
+fcmeanall2(:,2)=fc_id;
+for kk=1:size(fcMatrices_pearson_z,1)
+    fcdata1=fcMatrices_pearson_z(kk,:,:);
+    fcdata1=squeeze(fcdata1);
+    fcline=fcdata1(triu(true(size(fcdata1)),1));
+    fcmean=nanmean(fcline);
+    fcmeanall2(kk,1)=fcmean;
+end
+fc_data2=fcMatrices_pearson_z;
+
+fcmeanall=[fcmeanall2];
+fc_dataall=[fc_data2];
+
+fcmean=fcmeanall(:,1);
+fc_id=fcmeanall(:,2);
+%% 
+ukb_covariates = readtable(“~/hsl/pain_FC/cov_FC_noPA.csv"); % input covaraites
+
+%%
+ukb_covariates(:,2) = [];
+%%
+cov_id = ukb_covariates(:,1);
+cov_id = table2array(cov_id);
+cov_data = ukb_covariates(:,2:13);
+cov_data = table2array(cov_data);
+%% 
+for kk = 1:size(Hear_data,2)
+    phenodataori = Hear_data(:,kk);
+    phenodata = phenodataori(~isnan(phenodataori));
+    pheno_id = pheno_id(~isnan(phenodataori));
+
+final_id = intersect(pheno_id,fc_id);
+final_id = intersect(final_id,cov_id);
+
+[~,index]=intersect(cov_id,final_id);
+cov_final=cov_data(index,:);
+
+[~,index]=intersect(pheno_id,final_id);
+pheno_final=phenodata(index,:);
+
+[~, index] = intersect(fc_id, final_id);
+fc_final = fc_dataall(index,:,:);
+
+
+end
+
+%% 
+P_value_fc = nan(3570,1);
+C_value_fc = nan(3570,1);
+%%
+parfor i=1:size(fc_final,2)
+    i
+    Covariate = cov_final;
+    [C_value_fc(i,1), P_value_fc(i,1)] = partialcorr(fc_final(:,i),pheno_final,Covariate,'rows','complete');
+end
+
+%%
+
+P_value_fc = array2table(P_value_fc);
+C_value_fc = array2table(C_value_fc);
+results = horzcat(C_value_fc,P_value_fc,fc_edges);
+%%
+results.p_bon = results{:, 2} * 3486;
+
+%% Section 5.0 Results
+%%
+writetable(results,’~/hsl/pain_FC/LPprs_noPA_medica_reuslts_dk84.csv');
