@@ -1,0 +1,108 @@
+## Section 1.0 Path ----
+path_pain <- "~/data/paintypes/pain_type/"
+path_cov <- "~/data/covariates/"
+path_cognition <- "~/data/mental_health/cognition/"
+path_model <- "~/data/codebank/Model/"
+path_Infla_metab <- "~/data/SEM/"
+path_output <- "~/data/output/results_F1/infla_metab/"
+## load data----
+pain <- read.csv(paste0(path_pain,"pain_filtered_Final.csv"))
+
+##
+library(data.table)
+cov <- as.data.frame(fread(paste0(path_cov,"cov_pain_new.csv")))
+##
+
+Infla <- read.csv(paste0(path_Infla_metab,"Infla_ratio_int0.csv"))
+Infla[,c(7:10)] <- apply(Infla[,c(7:10)], 2, as.numeric)
+metabolism <- as.data.frame(fread(paste0(path_Infla_metab,file = "Metabolomics_baseline_raw.tsv"), header = T))
+
+## Section 3.0 Integrate ----
+## 3.1 data merge: pain + aparc_volume + cov_site ----
+pain_Infla_Cov <- Reduce(function(x,y) merge(x,y,by="eid"),list(pain,Infla,cov),accumulate = F)
+
+## 3.2 data merge: DSI + aparc_area + cov_site ----
+pain_metab_Cov <- Reduce(function(x,y) merge(x,y,by="eid"),list(pain,metabolism,cov),accumulate = F)
+
+## Section 4.0 Compute ----
+## 4.1 define function and covariates ----
+source(paste0(path_model,"lm2022a.R"))
+## 4.2 define covariates ----
+lm2022a_covariates <- names(cov)[-1]
+## Infla
+pain_Infla_list <- NULL
+for (i in names(pain)[c(4:17)]){
+  for (j in names(Infla)[-1]){
+    pain_Infla_list[[i]][[j]] <- lm2022a(pain_Infla_Cov[i],pain_Infla_Cov[j],pain_Infla_Cov)
+  }
+}
+pain_Infla_Pt <- NULL
+for (i in names(pain)[c(4:17)]){pain_Infla_Pt[[i]] <- Reduce(rbind.data.frame,pain_Infla_list[[i]],accumulate = F)}
+pain_Infla_results <- Reduce(rbind.data.frame,pain_Infla_Pt,accumulate = F)
+
+##
+write.csv(pain_Infla_results,file = paste0(path_output,"pain_Infla_results.csv"),row.names = F)
+
+
+## metab
+pain_metab_list <- NULL
+for (i in names(pain)[c(4:17)]){
+  for (j in names(metabolism)[-1]){
+    pain_metab_list[[i]][[j]] <- lm2022a(pain_metab_Cov[i],pain_metab_Cov[j],pain_metab_Cov)
+  }
+}
+pain_metab_Pt <- NULL
+for (i in names(pain)[c(4:17)]){pain_metab_Pt[[i]] <- Reduce(rbind.data.frame,pain_metab_list[[i]],accumulate = F)}
+pain_metab_results <- Reduce(rbind.data.frame,pain_metab_Pt,accumulate = F)
+
+
+##
+write.csv(pain_metab_results,file = paste0(path_output,"pain_metab_results.csv"),row.names = F)
+
+
+results <- read.csv(paste0(path_output,"pain_Infla_results.csv"))
+AP <- subset(results, Factor == "APvsHC")
+LP <- subset(results, Factor == "WLPvsHC")
+SP <- subset(results, Factor == "WSPvsHC")
+headache_3m <- subset(results, Factor == "headache_3m")
+face_pain_3m <- subset(results, Factor == "face_pain_3m")
+neck_shoulder_pain_3m <- subset(results, Factor == "neck_shoulder_pain_3m")
+back_pain_3m <- subset(results, Factor == "back_pain_3m")
+stomach_abdominal_pain_3m <- subset(results, Factor == "stomach_abdominal_pain_3m")
+hip_pain_3m <- subset(results, Factor == "hip_pain_3m")
+knee_pain_3m <- subset(results, Factor == "knee_pain_3m")
+
+write.csv(AP,file = paste0(path_output,"AP_Infla_lm_results.csv"),row.names = F)
+write.csv(LP,file = paste0(path_output,"LP_Infla_lm_results.csv"),row.names = F)
+write.csv(SP,file = paste0(path_output,"SP_Infla_lm_results.csv"),row.names = F)
+write.csv(headache_3m,file = paste0(path_output,"headache_3m_Infla_lm_results.csv"),row.names = F)
+write.csv(face_pain_3m,file = paste0(path_output,"face_pain_3m_Infla_lm_results.csv"),row.names = F)
+write.csv(neck_shoulder_pain_3m,file = paste0(path_output,"neck_shoulder_pain_3m_Infla_lm_results.csv"),row.names = F)
+write.csv(stomach_abdominal_pain_3m,file = paste0(path_output,"stomach_abdominal_pain_3m_Infla_lm_results.csv"),row.names = F)
+write.csv(hip_pain_3m,file = paste0(path_output,"hip_pain_3m_Infla_lm_results.csv"),row.names = F)
+write.csv(knee_pain_3m,file = paste0(path_output,"knee_pain_3m_Infla_lm_results.csv"),row.names = F)
+write.csv(back_pain_3m,file = paste0(path_output,"back_pain_3m_Infla_lm_results.csv"),row.names = F)
+
+
+results <- read.csv(paste0(path_output,"pain_metab_results.csv"))
+AP <- subset(results, Factor == "APvsHC")
+LP <- subset(results, Factor == "WLPvsHC")
+SP <- subset(results, Factor == "WSPvsHC")
+headache_3m <- subset(results, Factor == "headache_3m")
+face_pain_3m <- subset(results, Factor == "face_pain_3m")
+neck_shoulder_pain_3m <- subset(results, Factor == "neck_shoulder_pain_3m")
+back_pain_3m <- subset(results, Factor == "back_pain_3m")
+stomach_abdominal_pain_3m <- subset(results, Factor == "stomach_abdominal_pain_3m")
+hip_pain_3m <- subset(results, Factor == "hip_pain_3m")
+knee_pain_3m <- subset(results, Factor == "knee_pain_3m")
+
+write.csv(AP,file = paste0(path_output,"AP_metab_lm_results.csv"),row.names = F)
+write.csv(LP,file = paste0(path_output,"LP_metab_lm_results.csv"),row.names = F)
+write.csv(SP,file = paste0(path_output,"SP_metab_lm_results.csv"),row.names = F)
+write.csv(headache_3m,file = paste0(path_output,"headache_3m_metab_lm_results.csv"),row.names = F)
+write.csv(face_pain_3m,file = paste0(path_output,"face_pain_3m_metab_lm_results.csv"),row.names = F)
+write.csv(neck_shoulder_pain_3m,file = paste0(path_output,"neck_shoulder_pain_3m_metab_lm_results.csv"),row.names = F)
+write.csv(stomach_abdominal_pain_3m,file = paste0(path_output,"stomach_abdominal_pain_3m_metab_lm_results.csv"),row.names = F)
+write.csv(hip_pain_3m,file = paste0(path_output,"hip_pain_3m_metab_lm_results.csv"),row.names = F)
+write.csv(knee_pain_3m,file = paste0(path_output,"knee_pain_3m_metab_lm_results.csv"),row.names = F)
+write.csv(back_pain_3m,file = paste0(path_output,"back_pain_3m_metab_lm_results.csv"),row.names = F)
