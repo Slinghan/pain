@@ -1,0 +1,14 @@
+～/software/gcta \
+--fastGWA-mlm-binary \
+--grm-sparse～/UKB_gene_v3_eur_38w_grm/european \
+--mbfile～/UKB_gene_v3_eur_38w_grm/plink_file.list \
+--keep ～/UKB_gene_v3_eur_38w_grm/european_id.txt \
+--extract ～/UKB_gene_v3_eur_38w_grm/ukb_info0.9_maf0.001.snplist \
+--exclude ～/UKB_gene_v3_eur_38w_grm/failed.hardy.1e6.snplist \
+--maf 0.005 \
+--geno 0.05  \
+--pheno /～/hsl/PAIN/new/GWAS/GWAS_LP_eid.txt \
+--qcovar ~/hsl/PAIN/new/GWAS/GWAS_qcov.txt \
+--covar ~/hsl/PAIN/new/GWAS/GWAS_dcov.txt \
+--out ~/hsl/PAIN/new/GWAS/GWAS_result_LP_all \
+--thread-num 30
