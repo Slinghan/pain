@@ -1,0 +1,116 @@
+## Section 1.0 pain data cleaning (pain)----
+path_pain <- "~/UKB_new/"
+library(data.table)
+paintypes_int0 <- as.data.frame(fread(paste0(path_pain,"paintypes_int0.csv")))
+
+
+paintypes_int0$paintypes_1m <- ifelse (paintypes_int0$paintypes_1m == "-3", 'NA', paintypes_int0$paintypes_1m)
+paintypes_int0$paintypes_1m <- ifelse (paintypes_int0$paintypes_1m == "-7", '0', paintypes_int0$paintypes_1m)
+library(tidyverse)
+
+paintypes_int0 <- paintypes_int0%>% 
+  mutate(pain_1m = if_else(paintypes_int0$paintypes_1m == 'NA', 'NA', paintypes_int0$paintypes_1m))
+
+paintypes_int0 <- paintypes_int0%>% 
+  mutate(pain_1m = if_else(paintypes_int0$paintypes_1m != 'NA'&
+                             paintypes_int0$paintypes_1m != '0', '1', paintypes_int0$paintypes_1m))
+
+paintypes_int0 <- paintypes_int0%>% 
+  na.omit(paintypes_int0$paintypes_1m)
+
+paintypes_int0$headache_3m <- ifelse (paintypes_int0$headache_3m == "-3", 'NA',paintypes_int0$headache_3m)
+paintypes_int0$headache_3m <- ifelse (paintypes_int0$headache_3m == "-1", 'NA',paintypes_int0$headache_3m)
+paintypes_int0$headache_3m <- ifelse (paintypes_int0$paintypes_1m == "0", '0', paintypes_int0$headache_3m)
+
+paintypes_int0$face_pain_3m <- ifelse (paintypes_int0$face_pain_3m == "-3", 'NA', paintypes_int0$face_pain_3m)
+paintypes_int0$face_pain_3m <- ifelse (paintypes_int0$face_pain_3m == "-1", 'NA', paintypes_int0$face_pain_3m)
+paintypes_int0$face_pain_3m <- ifelse (paintypes_int0$paintypes_1m == "0", '0', paintypes_int0$face_pain_3m)
+
+paintypes_int0$neck_shoulder_pain_3m<- ifelse (paintypes_int0$neck_shoulder_pain_3m == "-3", 'NA', 
+                                               paintypes_int0$neck_shoulder_pain_3m)
+paintypes_int0$neck_shoulder_pain_3m <- ifelse (paintypes_int0$neck_shoulder_pain_3m == "-1", 'NA', 
+                                                paintypes_int0$neck_shoulder_pain_3m)
+paintypes_int0$neck_shoulder_pain_3m <- ifelse (paintypes_int0$paintypes_1m == "0", '0', 
+                                                paintypes_int0$neck_shoulder_pain_3m)
+
+paintypes_int0$back_pain_3m <- ifelse (paintypes_int0$back_pain_3m == "-3", 'NA', paintypes_int0$back_pain_3m)
+paintypes_int0$back_pain_3m <- ifelse (paintypes_int0$back_pain_3m == "-1", 'NA', paintypes_int0$back_pain_3m)
+paintypes_int0$back_pain_3m <- ifelse (paintypes_int0$paintypes_1m == "0", '0', paintypes_int0$back_pain_3m)
+
+paintypes_int0$stomach_abdominal_pain_3m <- ifelse (paintypes_int0$stomach_abdominal_pain_3m == "-3", 
+                                                    'NA', paintypes_int0$stomach_abdominal_pain_3m)
+paintypes_int0$stomach_abdominal_pain_3m <- ifelse (paintypes_int0$stomach_abdominal_pain_3m == "-1", 
+                                                    'NA', paintypes_int0$stomach_abdominal_pain_3m)
+paintypes_int0$stomach_abdominal_pain_3m <- ifelse (paintypes_int0$paintypes_1m == "0", '0', 
+                                                    paintypes_int0$stomach_abdominal_pain_3m)
+
+paintypes_int0$hip_pain_3m <- ifelse (paintypes_int0$hip_pain_3m == "-3", 'NA', paintypes_int0$hip_pain_3m)
+paintypes_int0$hip_pain_3m <- ifelse (paintypes_int0$hip_pain_3m == "-1", 'NA', paintypes_int0$hip_pain_3m)
+paintypes_int0$hip_pain_3m <- ifelse (paintypes_int0$paintypes_1m == "0", '0', paintypes_int0$hip_pain_3m)
+
+paintypes_int0$knee_pain_3m <- ifelse (paintypes_int0$knee_pain_3m == "-3", 'NA', paintypes_int0$knee_pain_3m)
+paintypes_int0$knee_pain_3m <- ifelse (paintypes_int0$knee_pain_3m == "-1", 'NA', paintypes_int0$knee_pain_3m)
+paintypes_int0$knee_pain_3m <- ifelse (paintypes_int0$paintypes_1m == "0", '0', paintypes_int0$knee_pain_3m)
+
+paintypes_int0$all_over_body_3m <- ifelse (paintypes_int0$all_over_body_3m == "-3", "NA", 
+                                           paintypes_int0$all_over_body_3m)
+paintypes_int0$all_over_body_3m <- ifelse (paintypes_int0$all_over_body_3m == "-1", "NA", 
+                                           paintypes_int0$all_over_body_3m)
+paintypes_int0$all_over_body_3m <- ifelse (paintypes_int0$paintypes_1m == "0", "0", 
+                                           paintypes_int0$all_over_body_3m)
+
+write.csv(paintypes_int0,file = paste0(path_pain,"pain_int0.csv"),row.names = F)
+
+## Section 2.0 pain types (pain)----
+paintypes_int0 <- paintypes_int0%>% 
+  mutate(pain_3m = ifelse(paintypes_int0$headache_3m == "1" |
+                            paintypes_int0$face_pain_3m == "1" |
+                            paintypes_int0$neck_shoulder_pain_3m == "1" |
+                            paintypes_int0$back_pain_3m == "1" |
+                            paintypes_int0$stomach_abdominal_pain_3m == "1" |
+                            paintypes_int0$hip_pain_3m == "1" |
+                            paintypes_int0$knee_pain_3m == "1"|
+                            paintypes_int0$all_over_body_3m == "1", "1", "0"))
+
+
+paintypes_int0 <- paintypes_int0%>% 
+  mutate(pain_status = ifelse(paintypes_int0$pain_1m == "1" &
+                                paintypes_int0$pain_3m == "0", '1', '2'))
+
+paintypes_int0$pain_status = ifelse(paintypes_int0$all_over_body_3m == "1", '3', 
+                                    paintypes_int0$pain_status)
+
+paintypes_int0$pain_status = ifelse(paintypes_int0$pain_1m == "0", '0', 
+                                    paintypes_int0$pain_status)
+
+
+write.csv(paintypes_int0,file = paste0(path_pain,"pain_site.csv"),row.names = F)
+
+## Section 3.0 pain types NA-0 (pain)----
+paintypes_int0$headache_3m <- ifelse (paintypes_int0$headache_3m == "NA", '0',
+                                      paintypes_int0$headache_3m)
+
+paintypes_int0$face_pain_3m <- ifelse (paintypes_int0$face_pain_3m == "NA", '0', 
+                                       paintypes_int0$face_pain_3m)
+
+paintypes_int0$neck_shoulder_pain_3m <- 
+  ifelse (paintypes_int0$neck_shoulder_pain_3m == "NA", '0', 
+          paintypes_int0$neck_shoulder_pain_3m)
+
+paintypes_int0$back_pain_3m <- ifelse (paintypes_int0$back_pain_3m == "NA", '0', 
+                                       paintypes_int0$back_pain_3m)
+
+paintypes_int0$stomach_abdominal_pain_3m <- 
+  ifelse (paintypes_int0$stomach_abdominal_pain_3m == "NA",'0', 
+          paintypes_int0$stomach_abdominal_pain_3m)
+
+paintypes_int0$hip_pain_3m <- ifelse (paintypes_int0$hip_pain_3m == "NA", '0', 
+                                      paintypes_int0$hip_pain_3m)
+
+paintypes_int0$knee_pain_3m <- ifelse (paintypes_int0$knee_pain_3m == "NA", '0', 
+                                       paintypes_int0$knee_pain_3m)
+
+paintypes_int0$all_over_body_3m <- ifelse (paintypes_int0$all_over_body_3m == "NA", "0", 
+                                           paintypes_int0$all_over_body_3m)
+
+write.csv(paintypes_int0,file = paste0(path_pain,"pain_site_withoutna.csv"),row.names = F)
