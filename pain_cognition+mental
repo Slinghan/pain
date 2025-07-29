@@ -1,0 +1,75 @@
+## Section 1.0 Path ----
+path_pain <- "～/data/paintypes/pain_type/"
+path_cov <- "～/data/covariates/"
+path_mental <- "～/data/mental_health/"
+path_model <- "～/data/codebank/Model/"
+path_output <- "～/data/output/results_F1/brain_function/"
+## paintypes_int0 ----
+painsites <- read.csv(paste0(path_pain,"pain_filtered_Final.csv"))
+
+## 2.2.0 data input: mental_cog ----
+library(data.table)
+brain_function <- as.data.frame(fread(paste0(path_mental,"mental_cognition.csv")))
+## 2.3.0 data input: Covariates ----
+library(data.table)
+Covariates_int0 <- read.csv(paste0(path_cov,"cov.csv"))
+## Section 3.0 Integrate ----
+## 3.1 painsites_int0 + brain_function + Covariates_int0----
+painsites_brain_function_cov_int0 <- Reduce(function(x,y) merge(x,y,by="eid"),list(painsites,brain_function,Covariates_int0),accumulate = F)
+## Section 4.0 Compute ----
+## 4.1 define function ----
+source(paste0(path_model,"lm2022a.R"))
+
+## 4.2 define covariates ----
+lm2022a_covariates <- names(Covariates_int0)[-1]
+
+## 4.3.1 compute: lm ----
+painsites_brain_function_lm_list <- NULL
+for (i in names(painsites)[c(4:17)]){
+  for (j in names(brain_function)[c(2:18)]){
+    painsites_brain_function_lm_list[[i]][[j]] <- lm2022a(painsites_brain_function_cov_int0[i],painsites_brain_function_cov_int0[j],painsites_brain_function_cov_int0)
+  }
+}
+painsites_brain_function_lm <- NULL
+for (i in names(painsites)[c(4:17)]){
+  painsites_brain_function_lm[[i]] <- Reduce(rbind.data.frame,painsites_brain_function_lm_list[[i]],accumulate = F)
+}
+painsites_brain_function_lm_results <- Reduce(rbind.data.frame,painsites_brain_function_lm,accumulate = F)
+
+## Section 5.0 Results ----
+## 5.1 results output lm----
+write.csv(painsites_brain_function_lm_results,file = paste0(path_output,"painsites_brain_function_lm_results.csv"),row.names = F)
+## Section 6.0 ploting ----
+results <- read.csv(paste0(path_output,"painsites_brain_function_lm_results.csv"))
+main_results <- subset(results, Factor %in% c("APvsHC", "WLPvsHC", "WSPvsHC"))
+main_results$FDR <- p.adjust(main_results$p, method = "BH")
+write.csv(main_results,file = paste0(path_output,"painsites_brain_function_FDRlm_results.csv"),row.names = F)
+
+sep_results <- subset(results, Factor %in% c("headache_3m", "face_pain_3m", "neck_shoulder_pain_3m",
+                                             "back_pain_3m","stomach_abdominal_pain_3m",
+                                             "hip_pain_3m","knee_pain_3m"))
+sep_results$FDR <- p.adjust(sep_results$p, method = "BH")
+write.csv(sep_results,file = paste0(path_output,"sep_painsites_brain_function_FDRlm_results.csv"),row.names = F)
+
+AP <- subset(results, Factor == "APvsHC")
+LP <- subset(results, Factor == "WLPvsHC")
+SP <- subset(results, Factor == "WSPvsHC")
+headache_3m <- subset(results, Factor == "headache_3m")
+face_pain_3m <- subset(results, Factor == "face_pain_3m")
+neck_shoulder_pain_3m <- subset(results, Factor == "neck_shoulder_pain_3m")
+back_pain_3m <- subset(results, Factor == "back_pain_3m")
+stomach_abdominal_pain_3m <- subset(results, Factor == "stomach_abdominal_pain_3m")
+hip_pain_3m <- subset(results, Factor == "hip_pain_3m")
+knee_pain_3m <- subset(results, Factor == "knee_pain_3m")
+
+write.csv(AP,file = paste0(path_output,"AP_brain_function_lm_results.csv"),row.names = F)
+write.csv(LP,file = paste0(path_output,"LP_brain_function_lm_results.csv"),row.names = F)
+write.csv(SP,file = paste0(path_output,"SP_brain_function_lm_results.csv"),row.names = F)
+write.csv(headache_3m,file = paste0(path_output,"headache_3m_brain_function_lm_results.csv"),row.names = F)
+write.csv(face_pain_3m,file = paste0(path_output,"face_pain_3m_brain_function_lm_results.csv"),row.names = F)
+write.csv(neck_shoulder_pain_3m,file = paste0(path_output,"neck_shoulder_pain_3m_brain_function_lm_results.csv"),row.names = F)
+write.csv(stomach_abdominal_pain_3m,file = paste0(path_output,"stomach_abdominal_pain_3m_brain_function_lm_results.csv"),row.names = F)
+write.csv(hip_pain_3m,file = paste0(path_output,"hip_pain_3m_brain_function_lm_results.csv"),row.names = F)
+write.csv(knee_pain_3m,file = paste0(path_output,"knee_pain_3m_brain_function_lm_results.csv"),row.names = F)
+write.csv(back_pain_3m,file = paste0(path_output,"back_pain_3m_brain_function_lm_results.csv"),row.names = F)
+write.csv(painsites_brain_function_lm_results,file = paste0(path_output,"painsites_brain_function_lm_results.csv"),row.names = F)
